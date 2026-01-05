@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Add CO - CO-PO Calculator{% endblock %}
+
+{% block content %}
+<style>
+@keyframes fadeIn { from {opacity:0; transform:translateY(20px);} to {opacity:1; transform:translateY(0);} }
+@keyframes slideIn { from {opacity:0; transform:translateX(-30px);} to {opacity:1; transform:translateX(0);} }
+@keyframes pulse { 0%{transform:scale(1);}50%{transform:scale(1.05);}100%{transform:scale(1);} }
+
+.page-container { animation: fadeIn 1s ease-out; max-width:600px; margin:auto; padding:20px; }
+.header-card {
+    background: linear-gradient(135deg, #2563eb, #38bdf8, #a21caf, #ec4899);
+    color:white; padding:20px; border-radius:15px; text-align:center; margin-bottom:20px;
+    box-shadow:0 8px 20px rgba(37,99,235,0.3); animation:slideIn 1.2s ease-out;
+}
+.header-card h2 { font-size:2.5rem; margin-bottom:10px; text-shadow:2px 2px 4px rgba(0,0,0,0.3); }
+.header-card p { font-size:1.1rem; opacity:0.9; }
+
+.form-card {
+    background: linear-gradient(145deg, #ffffff, #f8fafc);
+    border-radius:15px; padding:30px;
+    box-shadow:0 10px 25px rgba(0,0,0,0.15); border:1px solid #e2e8f0;
+    animation: fadeIn 1.5s ease-out;
+}
+.form-label { color:#374151; font-weight:600; margin-bottom:8px; transition: color 0.3s ease; }
+.form-control {
+    border:2px solid #d1d5db; border-radius:8px; padding:12px; transition: all 0.3s ease;
+    background-color:#fafafa;
+}
+.form-control:focus {
+    border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,0.1); background-color:#ffffff; transform:scale(1.02);
+}
+.btn-submit {
+    background: linear-gradient(135deg, #10b981, #059669); color:white; border:none;
+    padding:12px 30px; border-radius:25px; font-size:1.1rem; font-weight:600; cursor:pointer;
+    transition: all 0.3s ease; box-shadow:0 4px 15px rgba(16,185,129,0.3);
+}
+.btn-submit:hover {
+    background: linear-gradient(135deg, #059669, #047857); transform:translateY(-2px);
+    box-shadow:0 6px 20px rgba(16,185,129,0.4); animation:pulse 1s infinite;
+}
+.mb-3 { animation: slideIn 1.8s ease-out; }
+</style>
+
+<div class="page-container">
+
+    <!-- Header -->
+    <div class="header-card">
+        <h2>Add a New CO</h2>
+        <p>Define course outcomes for your course</p>
+    </div>
+
+    <!-- Form -->
+    <div class="form-card">
+        <form method="POST">
+            {% csrf_token %}
+
+            <!-- Select Course -->
+            <div class="mb-3">
+                <label for="course" class="form-label">Select Course</label>
+                <select id="course" name="course" class="form-control" required>
+                    <option value="" disabled selected>Select a course</option>
+                    {% for course in courses %}
+                        <option value="{{ course.id }}">{{ course.code }} - {{ course.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- CO Number -->
+            <div class="mb-3">
+                <label for="number" class="form-label">CO Number</label>
+                <input type="text" id="number" name="number" class="form-control" placeholder="e.g., CO1" required>
+            </div>
+
+            <!-- CO Description -->
+            <div class="mb-3">
+                <label for="description" class="form-label">CO Description</label>
+                <textarea id="description" name="description" class="form-control" rows="4" placeholder="Describe the course outcome" required></textarea>
+            </div>
+
+            <!-- Max Score -->
+            <div class="mb-3">
+                <label for="max_score" class="form-label">Max Score</label>
+                <input type="number" id="max_score" name="max_score" class="form-control" placeholder="Max marks for CO" required>
+            </div>
+
+            <!-- Submit -->
+            <div style="text-align:center;">
+                <button type="submit" class="btn-submit">Add CO</button>
+            </div>
+        </form>
+    </div>
+
+</div>
+{% endblock %}

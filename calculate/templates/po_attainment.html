@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}CO / PO Attainment - CO-PO Calculator{% endblock %}
+
+{% block content %}
+<style>
+.page-container {
+    max-width: 900px;
+    margin: auto;
+    padding: 20px;
+}
+
+.header-card {
+    background: linear-gradient(135deg, #1e40af, #3b82f6, #60a5fa);
+    color: white;
+    padding: 20px;
+    border-radius: 15px;
+    text-align: center;
+    margin-bottom: 20px;
+    position: relative;
+}
+.header-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(255,255,255,0.1);
+    border-radius: 15px;
+}
+.header-card h2 { position: relative; z-index: 1; }
+
+.course-card {
+    background: linear-gradient(135deg, #3b82f6, #60a5fa, #93c5fd);
+    padding: 20px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+.course-card select {
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 2px solid #1e40af;
+    min-width: 220px;
+}
+.course-card button {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    border: none;
+    padding: 10px 25px;
+    border-radius: 25px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: transform 0.2s;
+}
+.course-card button:hover {
+    background: linear-gradient(135deg, #059669, #047857);
+    transform: scale(1.05);
+}
+.table-card {
+    background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+}
+.table-card h3 {
+    margin-bottom: 15px;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.table-card h3 i { color: #3b82f6; }
+.table-card table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+.table-card th, .table-card td {
+    padding: 12px;
+    border: 1px solid #e2e8f0;
+    text-align: left;
+}
+.table-card th {
+    background: linear-gradient(135deg, #1e40af, #3b82f6);
+    color: white;
+    font-weight: bold;
+}
+.table-card tbody tr:nth-child(even) { background-color: #f9f9f9; }
+.table-card tbody tr:hover { background-color: #dbeafe; transition: background-color 0.3s; }
+.no-data {
+    text-align: center;
+    padding: 15px;
+    color: #777;
+    font-style: italic;
+}
+.btn-download {
+    background: linear-gradient(135deg, #3b82f6, #60a5fa);
+    color: white;
+    border: none;
+    padding: 15px 35px; /* taller and wider */
+    border-radius: 25px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 16px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+.btn-download:hover {
+    background: linear-gradient(135deg, #60a5fa, #93c5fd);
+    transform: scale(1.05);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.35);
+}
+.btn-download i {
+    font-size: 18px;
+}
+
+</style>
+
+<div class="page-container">
+
+    <div class="header-card">
+        <h2><i class="fas fa-chart-bar"></i> CO / PO Attainment</h2>
+        <p>View Program Outcome and Course Outcome attainment based on CO mapping</p>
+    </div>
+
+    <!-- Course Selection Card -->
+    <form method="get" class="course-card">
+        <label for="course_id"><i class="fas fa-book-open"></i> Select Course:</label>
+        <select name="course_id" id="course_id" required>
+            <option value="">-- Select Course --</option>
+            {% for course in courses %}
+                <option value="{{ course.id }}" {% if selected_course and selected_course.id == course.id %}selected{% endif %}>
+                    {{ course.code }} - {{ course.name }}
+                </option>
+            {% endfor %}
+        </select>
+        <button type="submit"><i class="fas fa-eye"></i> View</button>
+    </form>
+
+    {% if selected_course %}
+        <!-- PO Attainment Table -->
+        <div class="table-card">
+            <h3><i class="fas fa-chart-bar"></i> PO Attainment - {{ selected_course.code }}: {{ selected_course.name }}</h3>
+            {% if po_data %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>PO Number</th>
+                            <th>Description</th>
+                            <th>Attainment Score (Points)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for po in po_data %}
+                        <tr>
+                            <td>{{ po.number }}</td>
+                            <td>{{ po.description }}</td>
+                            <td>{{ po.score }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+              <div style="text-align: center; margin-top: 20px;">
+    <a href="{% url 'download_po_pdf' selected_course.id %}" class="btn-download">
+        <i class="fas fa-download"></i> Download PO PDF
+    </a>
+</div>
+
+            {% else %}
+                <div class="no-data">No PO attainment data available.</div>
+            {% endif %}
+        </div>
+    {% endif %}
+
+</div>
+{% endblock %}

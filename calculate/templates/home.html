@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Dashboard - CO-PO Calculator{% endblock %}
+
+{% block content %}
+<div style="display: flex; flex-direction: column; gap: 20px;">
+
+    <!-- Welcome Section -->
+    <div style="background: linear-gradient(90deg, #2563eb, #38bdf8, #a21caf);
+                color: white; padding: 30px; border-radius: 10px; text-align: center;">
+        <h1 style="margin-bottom: 10px;">🎓 Welcome to CO-PO Calculator</h1>
+        <p style="font-size: 16px;">Empowering educators with modern assessment tools</p>
+        {% if user.is_authenticated %}
+            <p style="margin-top:10px; font-weight:bold;">👋 Welcome back, {{ user.username }}!</p>
+        {% endif %}
+    </div>
+
+    <!-- Quick Actions -->
+    <div style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center;">
+        
+        <!-- Add Course -->
+        <div style="flex: 1 1 250px; background:white; border-radius:10px; box-shadow:0 3px 6px rgba(0,0,0,0.1); padding:20px; text-align:center;">
+            <i class="fas fa-plus-circle" style="font-size:40px; color:#2563eb; margin-bottom:10px;"></i>
+            <h3>Add New Course</h3>
+            <p>Create a new course for assessment</p>
+            <a href="{% url 'add_course' %}" class="btn btn-primary">Add Course</a>
+        </div>
+
+        <!-- Upload Marks -->
+        <div style="flex: 1 1 250px; background:white; border-radius:10px; box-shadow:0 3px 6px rgba(0,0,0,0.1); padding:20px; text-align:center;">
+            <i class="fas fa-upload" style="font-size:40px; color:#10b981; margin-bottom:10px;"></i>
+            <h3>Upload Marks</h3>
+            <p>Upload student marks via Excel</p>
+            <a href="{% url 'upload_marks' %}" class="btn btn-success">Upload</a>
+        </div>
+
+        <!-- View Attainment -->
+        <div style="flex: 1 1 250px; background:white; border-radius:10px; box-shadow:0 3px 6px rgba(0,0,0,0.1); padding:20px; text-align:center;">
+            <i class="fas fa-chart-line" style="font-size:40px; color:#facc15; margin-bottom:10px;"></i>
+            <h3>View Attainment</h3>
+            <p>Check CO and PO attainment</p>
+            <a href="{% url 'co_attainment' %}" class="btn btn-warning">View Results</a>
+        </div>
+
+    </div>
+
+    <!-- Tips & Tricks -->
+    <div style="background:white; border-radius:10px; padding:20px; box-shadow:0 3px 6px rgba(0,0,0,0.1);">
+        <h3 style="margin-bottom:10px;">💡 Tips & Tricks</h3>
+        <ul style="list-style-type: none; padding-left:0;">
+            <li style="margin-bottom:10px;">
+                ✅ Use Excel templates for bulk uploads to save time.
+            </li>
+            <li style="margin-bottom:10px;">
+                ⚠️ Update CO-PO mappings before calculating attainments.
+            </li>
+        </ul>
+    </div>
+
+</div>
+{% endblock %}

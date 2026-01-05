@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<style>
+    .section-card {
+        background: #ffffff;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        margin-bottom: 20px;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .section-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+    .title-card {
+        background: linear-gradient(135deg, #ff4757 0%, #ff9f43 100%);
+        color: white;
+        padding: 15px;
+        border-radius: 12px;
+        text-align: center;
+        font-size: 1.5rem;
+        font-weight: bold;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        margin-bottom: 15px;
+        animation: bounceIn 1.2s ease-out;
+    }
+    .selection-card {
+        background: linear-gradient(135deg, #5f27cd 0%, #9c88ff 100%);
+        color: white;
+        padding: 15px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+        max-width: 500px;
+        margin-left: auto;
+        margin-right: auto;
+        animation: fadeIn 1s ease-in;
+    }
+    .manual-card {
+        background: linear-gradient(135deg, #ff6b9d 0%, #ff3838 100%);
+        color: white;
+        border-radius: 15px;
+    }
+    .excel-card {
+        background: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%);
+        color: white;
+        border-radius: 15px;
+    }
+    .title {
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+    .disabled-section {
+        opacity: 0.5;
+        pointer-events: none;
+    }
+    .cards-row {
+        display: flex;
+        flex-direction: row;
+        gap: 15px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    .cards-row .section-card {
+        flex: 1;
+        min-width: 250px;
+        max-width: 500px;
+        animation: slideIn 0.8s ease-out;
+    }
+    .cards-row .section-card:nth-child(1) {
+        animation-delay: 0.2s;
+    }
+    .cards-row .section-card:nth-child(2) {
+        animation-delay: 0.4s;
+    }
+    table th, table td {
+        vertical-align: middle !important;
+    }
+    .btn-primary {
+        border-radius: 5px;
+        font-weight: 500;
+        transition: background-color 0.3s ease;
+    }
+    .btn-success {
+        border-radius: 5px;
+        font-weight: 500;
+        transition: background-color 0.3s ease;
+    }
+    .file-input {
+        border: 1px solid #ddd;
+        padding: 6px;
+        border-radius: 5px;
+        width: 100%;
+        transition: border-color 0.3s ease;
+    }
+    .file-input:focus {
+        border-color: #007bff;
+        outline: none;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes slideIn {
+        from { opacity: 0; transform: translateY(50px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes bounceIn {
+        0% { transform: scale(0.3); opacity: 0; }
+        50% { transform: scale(1.05); }
+        70% { transform: scale(0.9); }
+        100% { transform: scale(1); opacity: 1; }
+    }
+</style>
+
+
+<div class="container mt-4">
+
+    <div class="title-card">
+        <i class="bi bi-diagram-3-fill me-3"></i>CO-PO Mapping<i class="bi bi-diagram-3-fill ms-3"></i>
+    </div>
+
+    <!-- ✅ Select Course -->
+    <div class="selection-card">
+        <div class="title">Select Course</div>
+
+        <form method="GET">
+            <select name="course_id" class="form-select w-50" onchange="this.form.submit()">
+                <option value="">-- Select a Course --</option>
+                {% for course in courses %}
+                    <option value="{{ course.id }}"
+                        {% if selected_course and course.id == selected_course.id %}selected{% endif %}>
+                        {{ course.code }} - {{ course.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+
+    <!-- ✅ Only show these if course selected -->
+    <div class="cards-row">
+        <div class="section-card manual-card {% if not selected_course %}disabled-section{% endif %}">
+            <div class="title">Add CO-PO Mapping Manually</div>
+
+            <form method="POST">
+                {% csrf_token %}
+
+                <!-- CO Dropdown -->
+                <div class="mb-3">
+                    <label>CO</label>
+                    <select name="co" class="form-select" required>
+                        <option value="">Select CO</option>
+                        {% for co in cos %}
+                            <option value="{{ co.id }}">{{ co.number }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- PO Dropdown -->
+                <div class="mb-3">
+                    <label>PO</label>
+                    <select name="po" class="form-select" required>
+                        {% for po in pos %}
+                            <option value="{{ po.id }}">{{ po.number }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Level -->
+                <div class="mb-3">
+                    <label>Level</label>
+                    <input type="number" name="level" min="1" max="3" class="form-control" required>
+                </div>
+
+                <div class="mb-3">
+                    <button class="btn btn-light w-100">Add</button>
+                </div>
+            </form>
+        </div>
+
+
+        <!-- ✅ Excel Upload -->
+        <div class="section-card excel-card {% if not selected_course %}disabled-section{% endif %}">
+            <div class="title">Upload Mapping using Excel</div>
+
+            <form method="POST" enctype="multipart/form-data" class="row gy-3 align-items-end">
+                {% csrf_token %}
+                {% if selected_course %}
+                    <input type="hidden" name="course" value="{{ selected_course.id }}">
+                {% endif %}
+
+                <div class="col-md-8">
+                    <input type="file" name="excel_file" accept=".xlsx" class="file-input" required>
+                </div>
+
+                <div class="col-md-4">
+                    <button class="btn btn-light w-100">Upload</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ✅ Display CO-PO Mapping Table -->
+    {% if selected_course %}
+        <div class="section-card">
+            <h4 class="text-center mb-3">Current CO-PO Mappings for {{ selected_course.code }} - {{ selected_course.name }}</h4>
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>CO</th>
+                            {% for po in pos %}
+                                <th>{{ po.number }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for co in cos %}
+                            <tr>
+                                <td>{{ co.number }}</td>
+                                {% for po in pos %}
+                                    <td>
+                                        {% for mapping in mappings %}
+                                            {% if mapping.co == co and mapping.po == po %}
+                                                {{ mapping.level }}
+                                            {% endif %}
+                                        {% endfor %}
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+
+{% endblock %}

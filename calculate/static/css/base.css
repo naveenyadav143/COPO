@@ -1,0 +1,154 @@
+/* ================= RESET ================= */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  background-color: #f5f7fa;
+  overflow-x: hidden;
+}
+
+/* ================= NAVBAR ================= */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 70px;
+  background: linear-gradient(90deg, #1e3c72, #2a5298);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  z-index: 1300;
+}
+
+.sidebar-toggle-btn {
+  background: none;
+  border: none;
+  color: #ffffff;
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: transform 0.3s ease, color 0.3s ease;
+}
+
+.sidebar-toggle-btn:hover {
+  color: #ffdd59;
+  transform: rotate(90deg);
+}
+
+/* ================= SIDEBAR ================= */
+.sidebar {
+  position: fixed;
+  top: 70px; /* below navbar */
+  left: 0;
+  width: 220px;
+  height: calc(100vh - 70px);
+  background: linear-gradient(to bottom, #0b3b5b, #0d4a73);
+  overflow-y: auto;
+  z-index: 1200;
+
+  /* hidden by default */
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+}
+
+/* sidebar visible */
+.sidebar.show {
+  transform: translateX(0);
+}
+
+/* sidebar links */
+.sidebar a {
+  display: block;
+  padding: 14px 20px;
+  color: #ffffff;
+  text-decoration: none;
+  font-weight: 500;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.sidebar a:hover,
+.sidebar a.active {
+  background-color: #1e6ed0;
+  transform: translateX(5px);
+  border-radius: 8px;
+}
+
+/* ================= MAIN CONTENT ================= */
+.main-content {
+  margin-left: 0;
+  padding: 90px 20px 20px;
+  transition: margin-left 0.3s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.main-content.shift {
+  margin-left: 220px;
+}
+
+/* ================= ALERTS ================= */
+.alert {
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  transition: transform 0.3s ease;
+}
+
+.alert:hover {
+  transform: translateY(-3px);
+}
+
+/* ================= BUTTONS ================= */
+.btn {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+/* ================= CARDS ================= */
+.attractive-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.attractive-card:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+}
+
+.card-color-0 {
+  background: linear-gradient(135deg, #ff6b6b, #ffa726);
+}
+
+.card-color-1 {
+  background: linear-gradient(135deg, #42a5f5, #1e88e5);
+}
+
+.card-color-2 {
+  background: linear-gradient(135deg, #66bb6a, #43a047);
+}
+
+.card-color-3 {
+  background: linear-gradient(135deg, #ab47bc, #8e24aa);
+}
+
+.card-color-4 {
+  background: linear-gradient(135deg, #ff7043, #e64a19);
+}
+
+/* ================= UTILITIES ================= */
+.min-vh-80 {
+  min-height: 80vh;
+}
+
+/* ================= SCROLLBAR (OPTIONAL) ================= */
+.sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: 3px;
+}

@@ -1,0 +1,237 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Guide - CO-PO Calculator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: "Poppins", sans-serif;
+            background: linear-gradient(135deg, #2563eb, #38bdf8, #a21caf);
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0px 4px 20px rgba(0,0,0,0.2);
+        }
+
+        h1, h2 {
+            text-align: center;
+            color: #2563eb;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            margin-top: 40px;
+        }
+
+        p {
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        ul {
+            margin: 10px 0 20px 20px;
+        }
+
+        li {
+            margin-bottom: 10px;
+        }
+
+        .highlight {
+            background: #e0f2fe;
+            padding: 4px 8px;
+            border-radius: 6px;
+            color: #1e3a8a;
+        }
+
+        .btn-back {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #2563eb;
+            color: white;
+            border-radius: 8px;
+            text-decoration: none;
+            margin-top: 30px;
+            transition: 0.3s;
+        }
+
+        .btn-back:hover {
+            background: #1e40af;
+        }
+
+        .step-box {
+            background: #f9fafb;
+            padding: 15px;
+            border-left: 5px solid #2563eb;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+
+        .download-btn {
+            background: #16a34a;
+            color: white;
+            font-weight: 600;
+            padding: 10px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            display: inline-block;
+            margin-bottom: 8px;
+            transition: 0.3s;
+        }
+
+        .download-btn:hover {
+            background: #15803d;
+        }
+
+        .note {
+            color: #6b7280;
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+                margin: 20px;
+            }
+            h1 {
+                font-size: 22px;
+            }
+            p, li {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📘 User Guide — CO-PO Calculator</h1>
+        <p>Welcome to the CO-PO Attainment Calculator. This guide will help you navigate each section of the website and understand how to calculate and download CO & PO attainment reports easily.</p>
+
+        <!-- LOGIN -->
+        <h2>1. 🧑‍🏫 Login & Register</h2>
+        <div class="step-box">
+            <ul>
+                <li>New users must <span class="highlight">Register</span> with their credentials.</li>
+                <li>Existing users can <span class="highlight">Login</span> directly to access their dashboard.</li>
+                <li>Once logged in, you will be redirected to the main dashboard.</li>
+            </ul>
+        </div>
+
+        <!-- COURSE -->
+        <h2>2. 📚 Course Management</h2>
+        <div class="step-box">
+            <ul>
+                <li>Navigate to <span class="highlight">Course</span> and click on “Add Course”.</li>
+                <li>Enter <strong>Course Code</strong> and <strong>Course Name</strong>.</li>
+                <li>Saved courses will appear in your list for easy selection later.</li>
+            </ul>
+        </div>
+
+        <!-- CO -->
+        <h2>3. 🆕 Adding CO (Course Outcomes)</h2>
+        <div class="step-box">
+            <ul>
+                <li>Go to <span class="highlight">Add CO</span> from the dashboard.</li>
+                <li>Select the course for which you want to add COs.</li>
+                <li>Fill in:
+                    <ul>
+                        <li><strong>CO Number</strong> (e.g., CO1, CO2…)</li>
+                        <li><strong>Description</strong> — Define the outcome clearly.</li>
+                    </ul>
+                </li>
+                <li>Click <span class="highlight">“Save CO”</span> to store it.</li>
+                <li>You can view and manage COs anytime in the Course list page.</li>
+            </ul>
+        </div>
+
+        <!-- PO -->
+        <h2>4. 🆕 Adding PO (Program Outcomes)</h2>
+        <div class="step-box">
+            <ul>
+                <li>Go to the <span class="highlight">Add PO</span> page from the dashboard.</li>
+                <li>Add all <strong>12 POs</strong> used for your program.</li>
+                <li>POs are reusable across multiple courses.</li>
+            </ul>
+        </div>
+
+        <!-- MAPPING -->
+        <h2>5. 📝 CO-PO Mapping</h2>
+        <div class="step-box">
+            <div class="text-center">
+                <a href="{% static 'files/mapping_template.xlsx' %}" download class="download-btn">
+                    📥 Download Mapping Template
+                </a>
+                <p class="note">Use this file to fill in CO and PO mapping levels easily.</p>
+            </div>
+            <ul>
+                <li>Go to <span class="highlight">CO-PO Mapping</span> page.</li>
+                <li>Select the course and map each CO with the relevant PO using <span class="highlight">Level 1, 2, or 3</span>.</li>
+                <li>Level 1 = low contribution, Level 3 = strong contribution.</li>
+                <li>Save the mapping. It will be used for PO Attainment calculations.</li>
+            </ul>
+        </div>
+
+        <!-- MARKS UPLOAD -->
+        <h2>6. 📊 Upload Marks</h2>
+        <div class="step-box">
+            <div class="text-center">
+                <a href="{% static 'files/marks_template.xlsx' %}" download class="download-btn">
+                    📥 Download Marks Template
+                </a>
+                <p class="note">Fill in student marks for each CO, then upload the file.</p>
+            </div>
+            <ul>
+                <li>Download the Excel template and fill in marks for each student.</li>
+                <li>Make sure the CO columns match the course COs.</li>
+                <li>Upload the file back to the system from the Upload Marks page.</li>
+            </ul>
+        </div>
+
+        <!-- CO ATTAINMENT -->
+        <h2>7. 🧮 CO Attainment</h2>
+        <div class="step-box">
+            <ul>
+                <li>Go to <span class="highlight">CO Attainment</span> page and select a course.</li>
+                <li>The system calculates average attainment level for each CO.</li>
+                <li>You can also <span class="highlight">Download CO PDF</span> for reports.</li>
+            </ul>
+        </div>
+
+        <!-- PO ATTAINMENT -->
+        <h2>8. 🧭 PO Attainment</h2>
+        <div class="step-box">
+            <ul>
+                <li>Once CO attainment is done, visit <span class="highlight">PO Attainment</span> page.</li>
+                <li>PO scores are auto-calculated based on CO-PO mappings.</li>
+                <li>View the results in a table and <span class="highlight">Download PO PDF</span>.</li>
+            </ul>
+        </div>
+
+        <!-- REPORTS -->
+        <h2>9. ⬇️ PDF Reports</h2>
+        <div class="step-box">
+            <ul>
+                <li>Download professional CO and PO reports with one click.</li>
+                <li>Useful for <strong>Accreditation</strong> and <strong>Academic Audits</strong>.</li>
+                <li>Reports include Course details, CO/PO numbers, levels, and descriptions.</li>
+            </ul>
+        </div>
+
+        <!-- BACK BUTTON -->
+        <div style="text-align: center;">
+            <a href="{% url 'home' %}" class="btn-back">⬅ Back to Dashboard</a>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Upload Marks - CO-PO Calculator{% endblock %}
+
+{% block content %}
+<style>
+.page-container {
+    max-width: 700px;
+    margin: auto;
+    padding: 20px;
+}
+.header-card {
+    background: linear-gradient(135deg, #2563eb, #38bdf8, #a21caf);
+    color: white;
+    padding: 20px;
+    border-radius: 15px;
+    text-align: center;
+    margin-bottom: 20px;
+}
+.form-card {
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+.form-label {
+    font-weight: 600;
+    margin-bottom: 5px;
+    display: block;
+}
+.form-control {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    margin-bottom: 15px;
+}
+.btn-submit {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    border: none;
+    padding: 10px 25px;
+    border-radius: 25px;
+    cursor: pointer;
+}
+.btn-submit:hover {
+    background: linear-gradient(135deg, #059669, #047857);
+}
+.btn-download {
+    background: linear-gradient(135deg, #2563eb, #38bdf8);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 20px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+.btn-download:hover {
+    background: linear-gradient(135deg, #1e40af, #2563eb);
+}
+.text-small {
+    font-size: 0.9rem;
+    color: #6b7280;
+    margin-bottom: 10px;
+}
+</style>
+
+<div class="page-container">
+
+    <div class="header-card">
+        <h2>Upload Student Marks</h2>
+        <p>Upload marks via Excel for the selected course</p>
+    </div>
+
+    <div class="form-card">
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div>
+                <label class="form-label">Select Course</label>
+                <select class="form-control" name="course_id" required>
+                    <option value="">-- Select Course --</option>
+                    {% for course in courses %}
+                        <option value="{{ course.id }}">{{ course.code }} - {{ course.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+          
+
+            <div>
+                <label class="form-label">Select Excel File</label>
+                <input type="file" class="form-control" name="excel_file" accept=".xlsx,.xls" required>
+            </div>
+
+            <div style="text-align:center;">
+                <button type="submit" class="btn-submit">Upload Marks</button>
+                <h1> 
+                    
+                </h1>
+            </div>
+        </form>
+
+
+          <!-- Download Template -->
+            <div class="text-center">
+
+
+                <a href="{% static 'files/marks_template.xlsx' %}" download class="btn-download">
+                    📥 Download Excel Template
+                </a>
+                <p class="text-small">Use this template to fill student marks for each CO.</p>
+            </div>
+    </div>
+
+
+</div>
+{% endblock %}

@@ -8,11 +8,60 @@ from django.contrib.auth.models import User
 from openpyxl import load_workbook
 from collections import defaultdict
 from django.http import HttpResponse, Http404
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
+from statistics import mode, StatisticsError
+from collections import defaultdict
+from datetime import datetime
 from statistics import mode, StatisticsError
 
+from django.contrib.auth.decorators import login_required
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
+
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+
+from .models import Course, CO, PO, COPOMapping, COAttainment, StudentMark
+
+from django.shortcuts import render
+from django.urls import reverse
+
+def guide(request):
+    return render(request, "guide.html")
+
 # Create your views here.
+def add_default_pos():
+    default_pos = [
+        ("PO1", "Engineering knowledge: Apply knowledge of mathematics, science, engineering fundamentals, and an engineering specialization to the solution of complex engineering problems."),
+        ("PO2", "Problem analysis: Identify, formulate, research literature, and analyze complex engineering problems reaching substantiated conclusions using first principles of mathematics, natural sciences, and engineering sciences."),
+        ("PO3", "Design/development of solutions: Design solutions for complex engineering problems and design systems, components or processes that meet specified needs with appropriate consideration for public health and safety, cultural, societal, and environmental considerations."),
+        ("PO4", "Conduct investigations of complex problems: Use research-based knowledge and research methods including design of experiments, analysis and interpretation of data, and synthesis of information to provide valid conclusions."),
+        ("PO5", "Modern tool usage: Create, select, and apply appropriate techniques, resources, and modern engineering and IT tools including prediction and modeling to complex engineering activities with an understanding of the limitations."),
+        ("PO6", "The engineer and society: Apply reasoning informed by the contextual knowledge to assess societal, health, safety, legal and cultural issues and the consequent responsibilities relevant to professional engineering practice."),
+        ("PO7", "Environment and sustainability: Understand the impact of professional engineering solutions in societal and environmental contexts and demonstrate knowledge of, and need for sustainable development."),
+        ("PO8", "Ethics: Apply ethical principles and commit to professional ethics and responsibilities and norms of engineering practice."),
+        ("PO9", "Individual and team work: Function effectively as an individual, and as a member or leader in diverse teams and in multidisciplinary settings."),
+        ("PO10", "Communication: Communicate effectively on complex engineering activities with the engineering community and with society at large, such as being able to comprehend and write effective reports and design documentation, make effective presentations, and give and receive clear instructions."),
+        ("PO11", "Project management and finance: Demonstrate knowledge and understanding of engineering and management principles and apply these to one’s own work, as a member and leader in a team, to manage projects and in multidisciplinary environments."),
+        ("PO12", "Life-long learning: Recognize the need for, and have the preparation and ability to engage in independent and life-long learning in the broadest context of technological change."),
+    ]
+
+    for number, description in default_pos:
+        if not PO.objects.filter(number=number).exists():
+            PO.objects.create(number=number, description=description)
+
 def home(request):
-    return render(request, 'home.html')
+    add_default_pos()
+    if not request.session.get("seen_guide", False):
+        request.session["seen_guide"] = True
+        return redirect("guide")
+    return render(request, "home.html")
 
 
 def register(request):
@@ -83,7 +132,8 @@ def add_course(request):
 def courses(request):
     if request.user.is_authenticated:
         courses = Course.objects.filter(user=request.user)
-        return render(request, 'courses.html', {'courses': courses})
+        pos = PO.objects.all()  # Get all POs once
+        return render(request, 'courses.html', {'courses': courses, 'po_list': pos})
     else:
         return redirect('login')  # Redirect to login if not authenticated
     
@@ -91,9 +141,9 @@ def courses(request):
 def add_co(request):
     if request.method == 'POST':
         course_id = request.POST.get('course')
-        co_number = request.POST.get('co_number')
+        co_number = request.POST.get('number')
         co_description = request.POST.get('description')
-        max_marks = request.POST.get('max_marks')  # <-- get from form
+        max_score = request.POST.get('max_score')  # <-- get from form
 
         try:
             course = Course.objects.get(id=course_id, user=request.user)
@@ -105,7 +155,7 @@ def add_co(request):
                     course=course,
                     number=co_number,
                     description=co_description,
-                    max_score=max_marks  # <-- save to db
+                    max_score=max_score  # <-- save to db
                 )
                 messages.success(request, "Course Outcome added successfully!")
             return redirect('add_co')
@@ -118,72 +168,73 @@ def add_co(request):
 
 def add_po(request):
     if request.method == 'POST':
-        po_number = request.POST.get('po_number')
-        po_description = request.POST.get('po_description')
-
-        PO.objects.create(
-            number=po_number,
-            description=po_description
-        )
-        return redirect('add_po')  # or show success page
+        add_default_pos()
+        messages.success(request, "12 default Program Outcomes added successfully!")
+        return redirect('add_po')
 
     return render(request, 'add_po.html')
 
 
 @login_required
 def add_mapping(request):
+    selected_course_id = request.GET.get('course_id')
+    selected_course = None
+    if selected_course_id:
+        selected_course = get_object_or_404(Course, id=selected_course_id, user=request.user)
+
     if request.method == 'POST':
         processed = False
-        course_id = request.POST.get('course')
-        if not course_id:
-            messages.error(request, "Course selection is required for mapping.")
-            return redirect('add_mapping')
 
         # Excel upload
         excel_file = request.FILES.get('excel_file')
         if excel_file:
-            try:
-                wb = load_workbook(excel_file)
-                sheet = wb.active
-
-                # Read PO headers from first row (skip first column)
-                po_headers = [str(cell.value).strip().upper() for cell in sheet[1][1:]]
-
-                # Prepare PO and CO objects for fast lookup
-                po_map = {po.number.upper(): po for po in PO.objects.all()}
-                co_map = {co.number.upper(): co for co in CO.objects.filter(course_id=course_id)}
-
-                for row in sheet.iter_rows(min_row=2, values_only=True):
-                    co_key = str(row[0]).strip().upper()
-                    co = co_map.get(co_key)
-
-                    if not co:
-                        continue
-
-                    for i, level in enumerate(row[1:]):
-                        po_key = po_headers[i]
-                        po = po_map.get(po_key)
-
-                        if po and level:
-                            COPOMapping.objects.update_or_create(
-                                co=co,
-                                po=po,
-                                defaults={'level': int(level)}
-                            )
-                messages.success(request, "CO-PO mappings updated from Excel file!")
+            course_id = request.POST.get('course')
+            if not course_id:
+                messages.error(request, "Course selection is required for Excel upload.")
                 processed = True
+            else:
+                try:
+                    wb = load_workbook(excel_file)
+                    sheet = wb.active
 
-            except Exception as e:
-                messages.error(request, f"Failed to process Excel file: {e}")
-                processed = True
+                    # Read PO headers from first row (skip first column)
+                    po_headers = [str(cell.value).strip().upper() for cell in sheet[1][1:]]
 
-        # Manual form mapping (unchanged)
+                    # Prepare PO and CO objects for fast lookup
+                    po_map = {po.number.upper(): po for po in PO.objects.all()}
+                    co_map = {co.number.upper(): co for co in CO.objects.filter(course_id=course_id)}
+
+                    for row in sheet.iter_rows(min_row=2, values_only=True):
+                        co_key = str(row[0]).strip().upper()
+                        co = co_map.get(co_key)
+
+                        if not co:
+                            continue
+
+                        for i, level in enumerate(row[1:]):
+                            po_key = po_headers[i]
+                            po = po_map.get(po_key)
+
+                            if po and level:
+                                COPOMapping.objects.update_or_create(
+                                    co=co,
+                                    po=po,
+                                    defaults={'level': int(level)}
+                                )
+                    messages.success(request, "CO-PO mappings updated from Excel file!")
+                    processed = True
+
+                except Exception as e:
+                    messages.error(request, f"Failed to process Excel file: {e}")
+                    processed = True
+
+        # Manual form mapping
         co_id = request.POST.get('co')
         po_id = request.POST.get('po')
         level = request.POST.get('level')
         if co_id and po_id and level:
             try:
-                co = CO.objects.get(id=co_id, course_id=course_id)
+                co = CO.objects.get(id=co_id)
                 po = PO.objects.get(id=po_id)
                 COPOMapping.objects.create(
                     co=co,
@@ -197,14 +248,19 @@ def add_mapping(request):
                 processed = True
 
         if processed:
-            return redirect('add_mapping')
+            return redirect(reverse('add_mapping') + f'?course_id={selected_course_id}' if selected_course_id else 'add_mapping')
         else:
             messages.warning(request, "No mapping data provided.")
 
-    cos = CO.objects.filter(course__user=request.user)
+    if selected_course:
+        cos = CO.objects.filter(course=selected_course)
+        mappings = COPOMapping.objects.filter(co__course=selected_course).select_related('co', 'po')
+    else:
+        cos = CO.objects.filter(course__user=request.user)
+        mappings = COPOMapping.objects.filter(co__course__user=request.user).select_related('co', 'po')
     pos = PO.objects.all()
     courses = Course.objects.filter(user=request.user)
-    return render(request, 'mapping.html', {'cos': cos, 'pos': pos, 'courses': courses})
+    return render(request, 'mapping.html', {'cos': cos, 'pos': pos, 'courses': courses, 'selected_course': selected_course, 'mappings': mappings})
 
 
 def upload_marks(request):
@@ -390,34 +446,32 @@ def co_attainment_view(request):
 
         for co in cos:
             student_marks = StudentMark.objects.filter(course=selected_course, co=co)
-            levels = []
+            attainment_levels = [sm.attainment_level for sm in student_marks if sm.attainment_level is not None]
 
-            for sm in student_marks:
-                if sm.total_marks > 0:
-                    percent = (sm.obtained_marks / sm.total_marks) * 100
-                    if percent >= 60:
-                        levels.append(3)
-                    elif percent >= 40:
-                        levels.append(2)
-                    else:
-                        levels.append(1)
-
-            avg_level = round(sum(levels) / len(levels), 2) if levels else 0
+            if attainment_levels:
+                try:
+                    # Calculate mode (most frequent attainment level)
+                    mode_level = mode(attainment_levels)
+                except StatisticsError:
+                    # If there's no unique mode, use the average rounded
+                    mode_level = round(sum(attainment_levels) / len(attainment_levels))
+            else:
+                mode_level = 0
 
             # ✅ Save CO attainment
             COAttainment.objects.update_or_create(
                 course=selected_course,
                 co=co,
-                defaults={'level_avg': avg_level}
+                defaults={'level_avg': mode_level}
             )
 
             attainment_data.append({
                 'co_number': co.number,
                 'co_description': co.description,
-                'level': avg_level
+                'level': mode_level
             })
 
-            total_level += avg_level
+            total_level += mode_level
             co_count += 1
 
         if co_count > 0:
@@ -435,14 +489,17 @@ def calculate_po_attainment(request):
     courses = Course.objects.filter(user=request.user)
     po_scores = {}
     selected_course = None
+    pos = PO.objects.all()
 
     if selected_course_id:
         selected_course = get_object_or_404(Course, id=selected_course_id, user=request.user)
-        pos = PO.objects.all()
-        
-        # Get CO attainments for this course
-        co_attainments = {att.co.id: att.level_avg for att in COAttainment.objects.filter(course=selected_course)}
-        
+
+        # Get CO attainment levels for this course
+        co_attainments = {
+            att.co.id: att.level_avg
+            for att in COAttainment.objects.filter(course=selected_course)
+        }
+
         # Get all CO-PO mappings for this course's COs
         course_cos = CO.objects.filter(course=selected_course)
         mappings = COPOMapping.objects.filter(co__in=course_cos).select_related("co", "po")
@@ -453,42 +510,176 @@ def calculate_po_attainment(request):
             po_mappings[mapping.po_id].append(mapping)
 
         for po in pos:
-            total_weighted_score = 0
-            total_weight = 0
+            total_weighted_score = 0.0
+            total_weight = 0.0
 
-            # Get mappings for this PO
             mappings_for_po = po_mappings.get(po.id, [])
-            
+
             for mapping in mappings_for_po:
                 co_id = mapping.co_id
-                attainment = co_attainments.get(co_id, 0)  # Default to 0 if missing
-                
-                if attainment > 0:  # Only include if there's attainment data
-                    # Weighted score: attainment level * mapping level
-                    weighted_score = attainment * mapping.level
-                    total_weighted_score += weighted_score
-                    total_weight += mapping.level  # Use mapping level as weight
+                attainment = co_attainments.get(co_id, 0.0)
 
-            # Calculate PO attainment score (weighted average)
+                if attainment > 0:
+                    # Weighted score = CO Attainment (points) * Mapping level (1,2,3)
+                    total_weighted_score += attainment * mapping.level
+                    total_weight += mapping.level
+
             if total_weight > 0:
-                # Normalize to percentage (0-100) scale
-                # Max possible: 3 (attainment) * 3 (mapping) = 9
-                # So we divide by 9 and multiply by 100 to get percentage
-                po_score = round((total_weighted_score / total_weight) * (100 / 3), 2)
+                # PO attainment in POINTS (0.00 to 3.00)
+                po_score = round(total_weighted_score / total_weight, 2)
             else:
-                po_score = 0
-                
+                po_score = 0.0
+
             po_scores[po.number] = po_score
-            
-            # Store PO attainment in database
+
+            # Save to DB (optional)
             POAttainment.objects.update_or_create(
                 course=selected_course,
                 po=po,
                 defaults={'attainment_score': po_score}
             )
 
+    po_data = [{'number': po.number, 'score': po_scores.get(po.number, 0.0), 'description': po.description} for po in pos]
+
     return render(request, 'po_attainment.html', {
         'courses': courses,
         'selected_course': selected_course,
-        'po_scores': po_scores
+        'po_data': po_data
     })
+# ==================== PO PDF ====================
+@login_required
+def download_po_pdf(request, course_id):
+    course = get_object_or_404(Course, id=course_id, user=request.user)
+    # Only POs related to the course
+    pos = PO.objects.filter(copomapping__co__course=course).distinct()
+    
+    # CO attainment lookup
+    co_attainments = {att.co.id: att.level_avg for att in COAttainment.objects.filter(course=course)}
+    
+    course_cos = CO.objects.filter(course=course)
+    mappings = COPOMapping.objects.filter(co__in=course_cos).select_related("co", "po")
+    
+    po_mappings = defaultdict(list)
+    for mapping in mappings:
+        po_mappings[mapping.po_id].append(mapping)
+    
+    po_scores = {}
+    for po in pos:
+        total_weighted_score = 0.0
+        total_weight = 0.0
+        for mapping in po_mappings.get(po.id, []):
+            attainment = co_attainments.get(mapping.co_id, 0.0)
+            if attainment > 0:
+                total_weighted_score += attainment * mapping.level
+                total_weight += mapping.level
+        po_scores[po.number] = round(total_weighted_score / total_weight, 2) if total_weight > 0 else 0.0
+
+    # PDF response
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="po_attainment_{course.code}_{timestamp}.pdf"'
+
+    doc = SimpleDocTemplate(response, pagesize=letter)
+    styles = getSampleStyleSheet()
+    elements = []
+
+    # Title
+    elements.append(Paragraph(f"PO Attainment for Course: {course.code} - {course.name}", styles['Title']))
+    elements.append(Spacer(1, 12))
+
+    # Table data
+    data = [['PO Number', 'PO Description', 'Attainment Score (Points)']]
+    cell_style = ParagraphStyle(name='table_cell', fontSize=10)
+    for po in pos:
+        data.append([po.number, Paragraph(po.description, cell_style), str(po_scores.get(po.number, 0.0))])
+
+    table_style = [
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 14),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+    ]
+    table = Table(data)
+    table.setStyle(TableStyle(table_style))
+    elements.append(table)
+
+    doc.build(elements)
+    return response
+
+
+# ==================== CO PDF ====================
+@login_required
+def download_co_pdf(request, course_id):
+    course = get_object_or_404(Course, id=course_id, user=request.user)
+    cos = CO.objects.filter(course=course).order_by('number')
+    
+    attainment_data = []
+    total_level = 0
+    co_count = 0
+
+    for co in cos:
+        student_marks = StudentMark.objects.filter(course=course, co=co)
+        attainment_levels = [sm.attainment_level for sm in student_marks if sm.attainment_level is not None]
+
+        if attainment_levels:
+            try:
+                level = mode(attainment_levels)
+            except StatisticsError:
+                level = round(sum(attainment_levels) / len(attainment_levels))
+        else:
+            level = 0
+
+        attainment_data.append({
+            'co_number': co.number,
+            'co_description': co.description,
+            'level': level
+        })
+
+        total_level += level
+        co_count += 1
+
+    overall_level_avg = round(total_level / co_count, 2) if co_count > 0 else 0
+
+    # PDF response
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="co_attainment_{course.code}_{timestamp}.pdf"'
+
+    doc = SimpleDocTemplate(response, pagesize=letter)
+    styles = getSampleStyleSheet()
+    elements = []
+
+    # Title
+    elements.append(Paragraph(f"CO Attainment for Course: {course.code} - {course.name}", styles['Title']))
+    elements.append(Spacer(1, 12))
+
+    # Table
+    data = [['CO Number', 'Description', 'Average Attainment Level']]
+    cell_style = ParagraphStyle(name='table_cell', fontSize=10)
+    for co in attainment_data:
+        data.append([co['co_number'], Paragraph(co['co_description'], cell_style), str(co['level'])])
+
+    table_style = [
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 14),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+    ]
+    table = Table(data)
+    table.setStyle(TableStyle(table_style))
+    elements.append(table)
+
+    # Overall average
+    elements.append(Spacer(1, 12))
+    elements.append(Paragraph(f"Overall Average Level: {overall_level_avg}", styles['Normal']))
+
+    doc.build(elements)
+    return response
