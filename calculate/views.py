@@ -88,14 +88,11 @@ def login_view(request):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
-            return render(request, 'home.html', {
-                'message': 'Login successful!',
-                'user': user
-            })
+            messages.success(request, 'Login successful!')
+            return redirect('home')  # Assuming 'home' is the name for home.html
         else:
-            return render(request, 'login.html', {
-                'error': 'Invalid credentials'
-            })
+            messages.error(request, 'Invalid credentials')
+            return redirect('login')
     return render(request, 'login.html')
 
 
